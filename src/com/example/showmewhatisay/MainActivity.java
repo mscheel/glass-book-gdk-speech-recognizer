@@ -22,10 +22,9 @@ import android.widget.TextView;
 
 public class MainActivity extends Activity {
 
-	TextView mTextView;
-	SpeechRecognizer mSpeechRecognizer;
-	Context mContext;
-	Intent mSpeechIntent;
+	private TextView mTextView;
+	private SpeechRecognizer mSpeechRecognizer;
+	private Intent mSpeechIntent;
 
 	boolean mListening = false;
 	boolean mKeyWordSpoken = false;
@@ -46,11 +45,9 @@ public class MainActivity extends Activity {
 		// TODO Auto-generated method stub
 		super.onResume();
 
-		if (mSpeechRecognizer != null
-				&& mTextView.getText().toString().equals("stopped")) {
+		if (mSpeechRecognizer != null) {
 			initSpeech();
-			mSpeechRecognizer.startListening(mSpeechIntent);
-			mTextView.setText("started");
+			mTextView.setText("Tap and I will listen");
 
 		}
 
@@ -61,10 +58,8 @@ public class MainActivity extends Activity {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_main);
 
-		mContext = this;
-
 		mTextView = (TextView) findViewById(R.id.textView1);
-		Log.d(TAG, "" + mTextView);
+		Log.d(TAG, mTextView.getText().toString());
 
 		initSpeech();
 
@@ -91,11 +86,10 @@ public class MainActivity extends Activity {
 	public boolean onKeyDown(int keyCode, KeyEvent event) {
 
 		switch (keyCode) {
-		case KeyEvent.KEYCODE_DPAD_CENTER: {
+		case KeyEvent.KEYCODE_DPAD_CENTER:
 			mTextView.setText("I'm listening ...");
 			startListening();
 			return true;
-		}
 		}
 		return super.onKeyDown(keyCode, event);
 	}
@@ -136,14 +130,15 @@ public class MainActivity extends Activity {
 		@Override
 		public void onError(int error) {
 			Log.d(TAG, "error: " + error);
+			mSpeechRecognizer.stopListening();
+			mTextView.setText("error ... tap to try again");
+			mListening = false;
 		}
 
 		@Override
 		public void onResults(Bundle results) {
 
-			List<String> items = new ArrayList<String>();
-
-			items = results
+			List<String> items = results
 					.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION);
 
 			items.add(" [Tap and I'll listen again] ");
@@ -165,8 +160,7 @@ public class MainActivity extends Activity {
 
 		@Override
 		public void onPartialResults(Bundle partialResults) {
-			ArrayList<String> items = new ArrayList<String>();
-			items = partialResults
+			ArrayList<String> items = partialResults
 					.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION);
 
 			for (String item : items) {
