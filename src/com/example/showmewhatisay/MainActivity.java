@@ -4,8 +4,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 import android.app.Activity;
-import android.app.Fragment;
-import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
 import android.speech.RecognitionListener;
@@ -13,43 +11,27 @@ import android.speech.RecognizerIntent;
 import android.speech.SpeechRecognizer;
 import android.util.Log;
 import android.view.KeyEvent;
-import android.view.LayoutInflater;
-import android.view.Menu;
-import android.view.MenuItem;
-import android.view.View;
-import android.view.ViewGroup;
 import android.widget.TextView;
 
 public class MainActivity extends Activity {
 
 	private TextView mTextView;
-	private SpeechRecognizer mSpeechRecognizer;
 	private Intent mSpeechIntent;
 
 	boolean mListening = false;
-	boolean mKeyWordSpoken = false;
 
 	static final String TAG = "SHOWMEWHATISAY";
+	private static final int SPEECH_REQUEST = 303;
 
 	@Override
 	protected void onPause() {
 		super.onPause();
-		if (mSpeechRecognizer != null && mListening) {
-			mSpeechRecognizer.stopListening();
-		}
-
 	}
 
 	@Override
 	protected void onResume() {
 		// TODO Auto-generated method stub
 		super.onResume();
-
-		if (mSpeechRecognizer != null) {
-			initSpeech();
-			mTextView.setText("Tap and I will listen");
-
-		}
 
 	}
 
@@ -61,25 +43,33 @@ public class MainActivity extends Activity {
 		mTextView = (TextView) findViewById(R.id.textView1);
 		Log.d(TAG, mTextView.getText().toString());
 
-		initSpeech();
-
 	}
 
-	private void initSpeech() {
-		mSpeechRecognizer = SpeechRecognizer.createSpeechRecognizer(this);
-		AbstractMainRecognitionListener mRecognitionListener = new AbstractMainRecognitionListener();
-		mSpeechRecognizer.setRecognitionListener(mRecognitionListener);
-		mSpeechIntent = new Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH);
-		mSpeechIntent.putExtra(RecognizerIntent.EXTRA_LANGUAGE, "en-US"); //
-		// i18n
-		mSpeechIntent.putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL,
-				RecognizerIntent.LANGUAGE_MODEL_FREE_FORM);
-		mSpeechIntent.putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, true);
-		mSpeechIntent.putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, 10); // To
-																		// loop
-																		// every
-																		// X
-																		// results
+	protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+		if (requestCode == SPEECH_REQUEST && resultCode == RESULT_OK) {
+			List<String> items = data
+					.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS);
+
+			showItems(items);
+		} else if (requestCode == SPEECH_REQUEST && resultCode == RESULT_CANCELED) {
+			mTextView.setText("Tap and I will listen, cancel edition");
+		}
+	}
+
+	private void showItems(List<String> items) {
+		String allItems = "";
+		// only one item containing all words in this implementation
+		for (String item : items) {
+			Log.d(TAG, "item: " + item);
+			allItems += item + " ";
+			if (item.toLowerCase().contains("bitcoin")) {
+				mTextView
+						.setText("To the moon! [I heard Bitcoin, tap and I'll listen again, and try not to get distracted]");
+				Log.d(TAG, "bitcoin was spoken");
+				return;
+			}
+		}
+		mTextView.setText(allItems + "\nTap again and I will listen.");
 	}
 
 	@Override
@@ -95,92 +85,9 @@ public class MainActivity extends Activity {
 	}
 
 	private void startListening() {
-		mSpeechRecognizer.startListening(mSpeechIntent);
-	}
-
-	public class AbstractMainRecognitionListener implements RecognitionListener {
-
-		@Override
-		public void onReadyForSpeech(Bundle params) {
-			Log.d(TAG, "ready for speech");
-			mListening = true;
-		}
-
-		@Override
-		public void onBeginningOfSpeech() {
-			Log.d(TAG, "beginning of speech");
-		}
-
-		@Override
-		public void onRmsChanged(float rmsdB) {
-			// Log.d(TAG, "rms changed");
-		}
-
-		@Override
-		public void onBufferReceived(byte[] buffer) {
-			Log.d(TAG, "buffer received");
-		}
-
-		@Override
-		public void onEndOfSpeech() {
-			Log.d(TAG, "end of speech");
-			mListening = false;
-		}
-
-		@Override
-		public void onError(int error) {
-			Log.d(TAG, "error: " + error);
-			mSpeechRecognizer.stopListening();
-			mTextView.setText("error ... tap to try again");
-			mListening = false;
-		}
-
-		@Override
-		public void onResults(Bundle results) {
-
-			List<String> items = results
-					.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION);
-
-			items.add(" [Tap and I'll listen again] ");
-			if (!mKeyWordSpoken) {
-				showItems(items);
-			} else {
-				mKeyWordSpoken = false;
-			}
-		}
-
-		private void showItems(List<String> items) {
-			String allItems = "";
-			for (String item : items) {
-				Log.d(TAG, "item: " + item);
-				allItems += item + " ";
-			}
-			mTextView.setText(allItems);
-		}
-
-		@Override
-		public void onPartialResults(Bundle partialResults) {
-			ArrayList<String> items = partialResults
-					.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION);
-
-			for (String item : items) {
-				Log.d(TAG, "partial item: " + item);
-				if (item.toLowerCase().contains("bitcoin")) {
-					mTextView
-							.setText("To the moon! [I heard Bitcoin, tap and I'll listen again, and try not to get distracted]");
-					Log.d(TAG, "bitcoin was spoken");
-					mSpeechRecognizer.stopListening();
-					mKeyWordSpoken = true;
-				} else {
-					showItems(items);
-				}
-			}
-		}
-
-		@Override
-		public void onEvent(int eventType, Bundle params) {
-			Log.d(TAG, "event" + eventType);
-		}
+		Intent intent = new Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH);
+		intent.putExtra(RecognizerIntent.EXTRA_PROMPT, "I'm listening");
+		startActivityForResult(intent, SPEECH_REQUEST);
 	}
 
 }
