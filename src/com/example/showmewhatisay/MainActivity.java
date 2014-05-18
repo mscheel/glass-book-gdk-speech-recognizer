@@ -18,9 +18,7 @@ public class MainActivity extends Activity {
 	private TextView mTextView;
 	private Intent mSpeechIntent;
 
-	boolean mListening = false;
-
-	static final String TAG = "SHOWMEWHATISAY";
+	private static final String TAG = "SHOWMEWHATISAY";
 	private static final int SPEECH_REQUEST = 303;
 
 	@Override
@@ -30,21 +28,20 @@ public class MainActivity extends Activity {
 
 	@Override
 	protected void onResume() {
-		// TODO Auto-generated method stub
 		super.onResume();
-
 	}
 
+	//Assign a reference to the on screen TextView field
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_main);
 
 		mTextView = (TextView) findViewById(R.id.textView1);
-		Log.d(TAG, mTextView.getText().toString());
 
 	}
 
+	//This happens right before onResume, note two possibilities
 	protected void onActivityResult(int requestCode, int resultCode, Intent data) {
 		if (requestCode == SPEECH_REQUEST && resultCode == RESULT_OK) {
 			List<String> items = data
@@ -52,10 +49,11 @@ public class MainActivity extends Activity {
 
 			showItems(items);
 		} else if (requestCode == SPEECH_REQUEST && resultCode == RESULT_CANCELED) {
-			mTextView.setText("Tap and I will listen, cancel edition");
+			mTextView.setText("Tap and I will listen (canceled result)");
 		}
 	}
 
+	//Helper method that shows heard tokens and takes special action if a keyword is heard
 	private void showItems(List<String> items) {
 		String allItems = "";
 		// only one item containing all words in this implementation
@@ -72,18 +70,19 @@ public class MainActivity extends Activity {
 		mTextView.setText(allItems + "\nTap again and I will listen.");
 	}
 
+	// This demonstrates how to receive a user tap and do something when that event occurs
 	@Override
 	public boolean onKeyDown(int keyCode, KeyEvent event) {
 
 		switch (keyCode) {
 		case KeyEvent.KEYCODE_DPAD_CENTER:
-//			mTextView.setText("I'm listening ...");
 			startListening();
 			return true;
 		}
 		return super.onKeyDown(keyCode, event);
 	}
 
+	// Helper method that launches the Recognizer Intent
 	private void startListening() {
 		Intent intent = new Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH);
 		intent.putExtra(RecognizerIntent.EXTRA_PROMPT, "I'm listening");
