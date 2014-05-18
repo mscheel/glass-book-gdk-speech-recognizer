@@ -77,7 +77,7 @@ public class MainActivity extends Activity {
 
 		switch (keyCode) {
 		case KeyEvent.KEYCODE_DPAD_CENTER:
-			mTextView.setText("I'm listening ...");
+//			mTextView.setText("I'm listening ...");
 			startListening();
 			return true;
 		}
